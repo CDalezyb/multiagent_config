@@ -51,7 +51,7 @@ setup_global_rules() {
     mkdir -p "$HOME/.config/opencode"
     
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    RULES_FILE="$SCRIPT_DIR/GLOBAL_RULES.md"
+    RULES_FILE="$SCRIPT_DIR/rules/GLOBAL_RULES.md"
     
     if [ -f "$RULES_FILE" ]; then
         cp "$RULES_FILE" "$HOME/.config/opencode/AGENTS.md"
@@ -59,6 +59,21 @@ setup_global_rules() {
     else
         print_error "GLOBAL_RULES.md not found at $RULES_FILE"
         return 1
+    fi
+}
+
+setup_global_skills() {
+    print_info "Setting up global skills..."
+    
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    SKILLS_DIR="$SCRIPT_DIR/skills"
+    
+    if [ -d "$SKILLS_DIR" ] && [ "$(ls -A "$SKILLS_DIR" 2>/dev/null)" ]; then
+        mkdir -p "$HOME/.config/opencode/skills"
+        cp -r "$SKILLS_DIR/"* "$HOME/.config/opencode/skills/"
+        print_info "Global skills copied to ~/.config/opencode/skills/"
+    else
+        print_warn "No skills found in $SKILLS_DIR, skipping"
     fi
 }
 
@@ -127,7 +142,7 @@ main() {
     echo ""
     setup_global_rules
     echo ""
-    setup_openai_config
+    setup_global_skills
     echo ""
     
     print_info "Setup complete!"
@@ -135,9 +150,6 @@ main() {
     echo "To start OpenCode, run:"
     echo "  source ~/.bashrc  # or ~/.zshrc"
     echo "  opencode"
-    echo ""
-    echo "Or with API key:"
-    echo "  OPENAI_API_KEY=sk-... opencode"
 }
 
 main "$@"
