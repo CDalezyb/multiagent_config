@@ -70,7 +70,17 @@ setup_global_skills() {
     
     if [ -d "$SKILLS_DIR" ] && [ "$(ls -A "$SKILLS_DIR" 2>/dev/null)" ]; then
         mkdir -p "$HOME/.config/opencode/skills"
-        cp -r "$SKILLS_DIR/"* "$HOME/.config/opencode/skills/"
+        
+        for skill_file in "$SKILLS_DIR"/*.md; do
+            if [ -f "$skill_file" ]; then
+                skill_name=$(basename "$skill_file" .md)
+                skill_dest="$HOME/.config/opencode/skills/$skill_name"
+                mkdir -p "$skill_dest"
+                cp "$skill_file" "$skill_dest/SKILL.md"
+                print_info "Skill installed: $skill_name"
+            fi
+        done
+        
         print_info "Global skills copied to ~/.config/opencode/skills/"
     else
         print_warn "No skills found in $SKILLS_DIR, skipping"
