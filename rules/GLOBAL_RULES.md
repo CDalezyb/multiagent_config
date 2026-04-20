@@ -12,6 +12,9 @@
 - 使用 git status 查看当前状态前，不要执行任何 git 操作
 - 提交前先检查 git diff 确保修改正确
 - 提交前如项目有代码 format 配置（如 .clang-format、.prettierrc、.eslintrc 等），则执行 format
+- 默认使用 git push 推送代码
+- 禁止使用 force 方式 push 代码（如 git push --force），除非用户明确要求
+- 如果用户明确要求使用 force push，默认使用 git push --force-with-lease
 
 ## 编程风格规则
 
