@@ -71,9 +71,9 @@ setup_global_skills() {
     if [ -d "$SKILLS_DIR" ] && [ "$(ls -A "$SKILLS_DIR" 2>/dev/null)" ]; then
         mkdir -p "$HOME/.config/opencode/skills"
         
-        for skill_file in "$SKILLS_DIR"/*.md; do
+        for skill_file in "$SKILLS_DIR"/*/SKILL.md; do
             if [ -f "$skill_file" ]; then
-                skill_name=$(basename "$skill_file" .md)
+                skill_name=$(basename "$(dirname "$skill_file")")
                 skill_dest="$HOME/.config/opencode/skills/$skill_name"
                 mkdir -p "$skill_dest"
                 cp "$skill_file" "$skill_dest/SKILL.md"
