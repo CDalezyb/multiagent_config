@@ -228,9 +228,45 @@ setup_global_skills() {
     fi
 }
 
+usage() {
+    cat <<'EOF'
+Usage: bash setup_codex.sh [--install-skill] [--install-rule] [--help]
+
+By default, only install or update Codex.
+
+Options:
+  --install-skill  Also install/update global Codex skills.
+  --install-rule   Also install/update global Codex rules.
+  -h, --help       Show this help message.
+EOF
+}
+
 main() {
     local repo_dir
     local target_home
+    local install_skill=0
+    local install_rule=0
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --install-skill)
+                install_skill=1
+                ;;
+            --install-rule)
+                install_rule=1
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                usage
+                return 1
+                ;;
+        esac
+        shift
+    done
 
     repo_dir="$(script_dir)"
     target_home="$(codex_home)"
@@ -243,11 +279,19 @@ main() {
     install_or_upgrade_codex
     echo ""
 
-    mkdir -p "$target_home"
-    setup_global_rules "$repo_dir" "$target_home"
-    echo ""
-    setup_global_skills "$repo_dir" "$target_home"
-    echo ""
+    if [ "$install_rule" -eq 1 ] || [ "$install_skill" -eq 1 ]; then
+        mkdir -p "$target_home"
+    fi
+
+    if [ "$install_rule" -eq 1 ]; then
+        setup_global_rules "$repo_dir" "$target_home"
+        echo ""
+    fi
+
+    if [ "$install_skill" -eq 1 ]; then
+        setup_global_skills "$repo_dir" "$target_home"
+        echo ""
+    fi
 
     print_info "Codex setup complete"
     print_info "Config directory: $target_home"
