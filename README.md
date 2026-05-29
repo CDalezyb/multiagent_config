@@ -1,6 +1,6 @@
 # Multiagent Config
 
-自动化配置 Codex / OpenCode / Cursor 的脚本集合，用于在新机器或容器中快速完成工具安装和全局配置同步。
+自动化配置 Codex / OpenCode / Cursor / Claude Code 的脚本集合，用于在新机器或容器中快速完成工具安装和全局配置同步。
 
 ## 目录结构
 
@@ -9,6 +9,7 @@ multiagent_config/
 ├── setup_codex.sh        # Codex 安装和可选配置同步脚本
 ├── setup_opencode.sh     # OpenCode 配置脚本
 ├── setup_cursor.sh       # Cursor 配置脚本
+├── setup_cc.sh           # Claude Code (claude) 安装和配置同步脚本
 ├── rules/
 │   └── GLOBAL_RULES.md   # 全局规则
 └── skills/
@@ -120,11 +121,56 @@ skills/
 bash setup_codex.sh --install-skill
 ```
 
-## OpenCode / Cursor
+## OpenCode / Cursor / Claude Code
 
-仓库中仍保留 OpenCode 和 Cursor 的配置脚本：
+仓库中仍保留 OpenCode、Cursor 和 Claude Code 的配置脚本：
 
 ```bash
 bash setup_opencode.sh
 bash setup_cursor.sh
+bash setup_cc.sh
+```
+
+## Claude Code 使用方法
+
+安装或更新 Claude Code v2.1.153：
+
+```bash
+bash setup_cc.sh
+```
+
+配置 DeepSeek 后端（按官方文档写入 `~/.claude/settings.json`）：
+
+```bash
+bash setup_cc.sh --use-deepseek
+```
+
+脚本会提示输入 DeepSeek API Key，然后写入 `~/.claude/settings.json`，包含 `authMethod`、`hasCompletedOnboarding` 以及完整的 `env` 配置。
+
+同步 rules / skills：
+
+```bash
+bash setup_cc.sh --install-rule
+bash setup_cc.sh --install-skill
+bash setup_cc.sh --install-rule --install-skill
+```
+
+安装并配置 DeepSeek：
+
+```bash
+bash setup_cc.sh --use-deepseek
+```
+
+查看参数说明：
+
+```bash
+bash setup_cc.sh --help
+```
+
+## Claude Code 相关环境变量
+
+```bash
+CLAUDE_CODE_HOME=/path/to/.claude bash setup_cc.sh
+CC_BIN_DIR=/path/to/bin bash setup_cc.sh
+SKIP_CC_INSTALL=1 bash setup_cc.sh --use-deepseek
 ```
