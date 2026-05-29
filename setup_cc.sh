@@ -206,6 +206,7 @@ setup_deepseek_backend() {
 {
   "authMethod": "api-key",
   "hasCompletedOnboarding": true,
+  "theme": "dark",
   "env": {
     "ANTHROPIC_AUTH_TOKEN": "${api_key}",
     "ANTHROPIC_BASE_URL": "https://api.deepseek.com/anthropic",
@@ -233,7 +234,6 @@ Install or update Claude Code (claude CLI from Anthropic).
 
 Options:
   --install-skill  Also install/update global Claude Code skills.
-  --install-rule   Also install/update global Claude Code rules (CLAUDE.md).
   --use-deepseek   Configure Claude Code to use DeepSeek as the backend
                    (per https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code).
                    Prompts for your DeepSeek API key.
@@ -250,7 +250,6 @@ main() {
     local repo_dir
     local target_home
     local install_skill=0
-    local install_rule=0
     local use_deepseek=0
 
     while [ "$#" -gt 0 ]; do
@@ -259,7 +258,9 @@ main() {
                 install_skill=1
                 ;;
             --install-rule)
-                install_rule=1
+                # kept for backward compatibility, now default
+                shift
+                continue
                 ;;
             --use-deepseek)
                 use_deepseek=1
@@ -288,14 +289,9 @@ main() {
     install_or_upgrade_claude_code
     echo ""
 
-    if [ "$install_rule" -eq 1 ] || [ "$install_skill" -eq 1 ]; then
-        mkdir -p "$target_home"
-    fi
-
-    if [ "$install_rule" -eq 1 ]; then
-        setup_global_rules "$repo_dir" "$target_home"
-        echo ""
-    fi
+    mkdir -p "$target_home"
+    setup_global_rules "$repo_dir" "$target_home"
+    echo ""
 
     if [ "$install_skill" -eq 1 ]; then
         setup_global_skills "$repo_dir" "$target_home"

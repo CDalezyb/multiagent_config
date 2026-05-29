@@ -230,13 +230,12 @@ setup_global_skills() {
 
 usage() {
     cat <<'EOF'
-Usage: bash setup_codex.sh [--install-skill] [--install-rule] [--help]
+Usage: bash setup_codex.sh [--install-skill] [--help]
 
-By default, only install or update Codex.
+Install or update Codex. Global rules are always installed by default.
 
 Options:
   --install-skill  Also install/update global Codex skills.
-  --install-rule   Also install/update global Codex rules.
   -h, --help       Show this help message.
 EOF
 }
@@ -245,7 +244,6 @@ main() {
     local repo_dir
     local target_home
     local install_skill=0
-    local install_rule=0
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
@@ -253,7 +251,9 @@ main() {
                 install_skill=1
                 ;;
             --install-rule)
-                install_rule=1
+                # kept for backward compatibility, now default
+                shift
+                continue
                 ;;
             -h|--help)
                 usage
@@ -279,14 +279,9 @@ main() {
     install_or_upgrade_codex
     echo ""
 
-    if [ "$install_rule" -eq 1 ] || [ "$install_skill" -eq 1 ]; then
-        mkdir -p "$target_home"
-    fi
-
-    if [ "$install_rule" -eq 1 ]; then
-        setup_global_rules "$repo_dir" "$target_home"
-        echo ""
-    fi
+    mkdir -p "$target_home"
+    setup_global_rules "$repo_dir" "$target_home"
+    echo ""
 
     if [ "$install_skill" -eq 1 ]; then
         setup_global_skills "$repo_dir" "$target_home"
