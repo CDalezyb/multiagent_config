@@ -102,21 +102,45 @@ install_claude_code_from_npm() {
     return 1
 }
 
+ensure_npm_user_prefix() {
+    local npm_prefix
+    npm_prefix="$(npm config get prefix 2>/dev/null || true)"
+
+    # If prefix is system-level and not writable, switch to ~/.local
+    if [ ! -w "${npm_prefix}/lib/node_modules" ] 2>/dev/null; then
+        local user_prefix="${HOME}/.local"
+        print_info "Configuring npm prefix to ${user_prefix} (avoids needing sudo)"
+        npm config set prefix "$user_prefix"
+        append_path_to_shell_rcs "${user_prefix}/bin"
+        # Also fix ownership of any existing npm cache
+        mkdir -p "${HOME}/.npm" 2>/dev/null || true
+    fi
+}
+
 install_or_upgrade_claude_code() {
     local bin_dir
+    local npm_prefix_before
 
     if [ "${SKIP_CC_INSTALL:-0}" = "1" ]; then
         print_warn "Skipping Claude Code install/upgrade because SKIP_CC_INSTALL=1"
         return 0
     fi
 
+    npm_prefix_before="$(npm config get prefix 2>/dev/null || true)"
+    ensure_npm_user_prefix
     bin_dir="$(install_bin_dir)"
 
     if check_command claude; then
-        print_info "Claude Code already installed, attempting upgrade..."
+        print_info "Claude Code already installed: $(claude --version 2>/dev/null || true)"
+        # If we just switched npm prefix, always reinstall to new location
+        if [ "$(npm config get prefix 2>/dev/null)" != "$npm_prefix_before" ]; then
+            print_info "Reinstalling to user prefix (previously under system path)"
+        else
+            print_info "Attempting upgrade..."
+        fi
         if check_command npm; then
             npm install -g "$CLAUDE_CODE_NPM_PACKAGE"
-            print_info "Claude Code upgrade complete"
+            print_info "Claude Code install/upgrade complete"
             return 0
         fi
         print_warn "npm is unavailable, skipping upgrade"
