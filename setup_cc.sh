@@ -19,6 +19,67 @@ script_dir() {
     cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
 }
 
+ensure_nodejs_version() {
+    local node_version major_version need_install
+
+    need_install=0
+    if ! check_command node; then
+        print_warn "Node.js is not installed"
+        need_install=1
+    else
+        node_version=$(node --version 2>/dev/null | sed 's/^v//')
+        major_version=$(printf '%s\n' "$node_version" | cut -d'.' -f1)
+
+        if [ "$major_version" -ge 18 ] 2>/dev/null; then
+            print_info "Node.js version ${node_version} meets requirement (>=18)"
+            return 0
+        fi
+        print_warn "Node.js version ${node_version} is too old, Claude Code requires >=18"
+        need_install=1
+    fi
+
+    if [ "$need_install" -eq 0 ]; then
+        return 0
+    fi
+
+    # Try to install Node.js 20.x via NodeSource on Debian/Ubuntu
+    if [ -f /etc/debian_version ]; then
+        print_info "Attempting to install Node.js 20.x via NodeSource..."
+        if ! check_command curl; then
+            print_error "curl is required to download NodeSource setup script"
+            return 1
+        fi
+
+        curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 2>/dev/null
+        apt-get remove -y libnode-dev nodejs-doc 2>/dev/null || true
+        apt-get install -y nodejs
+
+        if check_command node; then
+            node_version=$(node --version 2>/dev/null | sed 's/^v//')
+            major_version=$(printf '%s\n' "$node_version" | cut -d'.' -f1)
+            if [ "$major_version" -ge 18 ] 2>/dev/null; then
+                print_info "Node.js installed: version ${node_version}"
+                return 0
+            fi
+        fi
+    fi
+
+    # Alternative: try nvm
+    if [ -s "${NVM_DIR:-${HOME}/.nvm}/nvm.sh" ]; then
+        print_info "Found nvm, attempting to install Node.js 20..."
+        . "${NVM_DIR:-${HOME}/.nvm}/nvm.sh"
+        nvm install 20
+        if node --version 2>/dev/null | grep -q '^v1[89]\|^v2'; then
+            print_info "Node.js installed via nvm: $(node --version)"
+            return 0
+        fi
+    fi
+
+    print_error "Failed to install/upgrade Node.js. Please manually install Node.js >= 18"
+    print_error "  Quick install: curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs"
+    return 1
+}
+
 default_bin_dir() {
     printf '%s\n' "${HOME}/.local/bin"
 }
@@ -127,6 +188,7 @@ install_or_upgrade_claude_code() {
     fi
 
     npm_prefix_before="$(npm config get prefix 2>/dev/null || true)"
+    ensure_nodejs_version || return 1
     ensure_npm_user_prefix
     bin_dir="$(install_bin_dir)"
 
