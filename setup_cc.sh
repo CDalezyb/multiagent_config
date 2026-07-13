@@ -159,7 +159,22 @@ install_claude_code_from_npm() {
         return 0
     fi
 
+    # Try to find claude via npm prefix bin directory
+    local npm_bin_dir
+    npm_bin_dir="$(npm config get prefix 2>/dev/null)/bin"
+    if [ -x "${npm_bin_dir}/claude" ]; then
+        print_warn "Found claude at ${npm_bin_dir}/claude, but it's not in PATH"
+        print_info "Add the following to your shell config or run:"
+        print_info "  export PATH=\"${npm_bin_dir}:\$PATH\""
+        export PATH="${npm_bin_dir}:$PATH"
+        if check_command claude; then
+            print_info "Claude Code is now available in the current session"
+            return 0
+        fi
+    fi
+
     print_error "npm install finished, but 'claude' command not found in PATH"
+    print_error "Check: ls -la \"${npm_bin_dir}/claude\""
     return 1
 }
 
@@ -172,10 +187,14 @@ ensure_npm_user_prefix() {
         local user_prefix="${HOME}/.local"
         print_info "Configuring npm prefix to ${user_prefix} (avoids needing sudo)"
         npm config set prefix "$user_prefix"
-        append_path_to_shell_rcs "${user_prefix}/bin"
         # Also fix ownership of any existing npm cache
         mkdir -p "${HOME}/.npm" 2>/dev/null || true
     fi
+
+    # Always ensure npm global bin directory is in PATH (regardless of prefix change)
+    local effective_prefix
+    effective_prefix="$(npm config get prefix 2>/dev/null || true)"
+    append_path_to_shell_rcs "${effective_prefix}/bin"
 }
 
 install_or_upgrade_claude_code() {
