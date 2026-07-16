@@ -301,14 +301,12 @@ GO_HELP
 
     print_info "构建 Moon Bridge（源码: ${repo_dir}）..."
     mkdir -p "$(dirname "$bin_path")"
-    cd "$repo_dir"
-    if ! go build -o "$bin_path" ./cmd/moonbridge; then
-        cd - >/dev/null
+    # GOWORK=off 防止父目录的 .git 干扰 Go workspace 检测
+    if ! GOWORK=off go build -C "$repo_dir" -o "$bin_path" ./cmd/moonbridge; then
         print_error "go build 失败，请检查 Go 版本和 moon-bridge 源码"
         return 1
     fi
     chmod +x "$bin_path"
-    cd - >/dev/null
     print_info "Moon Bridge 构建成功: ${bin_path}"
 }
 
