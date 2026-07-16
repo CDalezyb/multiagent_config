@@ -301,10 +301,29 @@ GO_HELP
 
     print_info "构建 Moon Bridge（源码: ${repo_dir}）..."
     mkdir -p "$(dirname "$bin_path")"
-    # 使用 subshell 隔离工作目录，防止父目录 .git 干扰 Go module 检测
-    if ! ( cd "$repo_dir" && GOWORK=off go build -o "$bin_path" ./cmd/moonbridge ); then
-        print_error "go build 失败，请检查 Go 版本和 moon-bridge 源码"
-        return 1
+
+    # Go 1.25 在父目录存在 .git 时可能触发 VCS workspace 检测，
+    # 导致即使在 moon-bridge 目录内也报 "cannot find main module"。
+    # 兜底方案：临时写一个 go.work 覆盖自动检测。
+    local need_workfile=0
+    cd "$repo_dir"
+    if ! go build -o "$bin_path" ./cmd/moonbridge 2>/dev/null; then
+        need_workfile=1
+    fi
+    cd - >/dev/null
+
+    if [ "$need_workfile" -eq 1 ]; then
+        print_warn "直接构建失败，尝试用 go.work 覆盖 VCS 检测..."
+        printf 'go 1.25.0\n\nuse .\n' > "$repo_dir/go.work"
+        cd "$repo_dir"
+        if ! go build -o "$bin_path" ./cmd/moonbridge; then
+            rm -f "$repo_dir/go.work"
+            cd - >/dev/null
+            print_error "go build 失败，请检查 Go 版本和 moon-bridge 源码"
+            return 1
+        fi
+        rm -f "$repo_dir/go.work"
+        cd - >/dev/null
     fi
     chmod +x "$bin_path"
     print_info "Moon Bridge 构建成功: ${bin_path}"
