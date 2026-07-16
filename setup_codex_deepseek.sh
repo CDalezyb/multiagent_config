@@ -301,8 +301,8 @@ GO_HELP
 
     print_info "构建 Moon Bridge（源码: ${repo_dir}）..."
     mkdir -p "$(dirname "$bin_path")"
-    # GOWORK=off 防止父目录的 .git 干扰 Go workspace 检测
-    if ! GOWORK=off go build -C "$repo_dir" -o "$bin_path" ./cmd/moonbridge; then
+    # 使用 subshell 隔离工作目录，防止父目录 .git 干扰 Go module 检测
+    if ! ( cd "$repo_dir" && GOWORK=off go build -o "$bin_path" ./cmd/moonbridge ); then
         print_error "go build 失败，请检查 Go 版本和 moon-bridge 源码"
         return 1
     fi
