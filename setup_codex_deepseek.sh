@@ -277,9 +277,18 @@ GO_HELP
         return 1
     fi
 
-    local go_version repo_dir
+    local go_version repo_dir go_major go_minor
     go_version=$(go version 2>/dev/null | grep -oP 'go\K[0-9]+\.[0-9]+' | head -1 || echo "0.0")
+    go_major=$(echo "$go_version" | cut -d. -f1)
+    go_minor=$(echo "$go_version" | cut -d. -f2)
     print_info "检测到 Go ${go_version}"
+
+    # Moon Bridge 需要 Go >= 1.25
+    if [ "$go_major" -lt 1 ] 2>/dev/null || { [ "$go_major" -eq 1 ] && [ "$go_minor" -lt 25 ]; }; then
+        print_error "Moon Bridge 需要 Go >= 1.25，当前版本: ${go_version}"
+        print_info "请升级 Go 后重试，或使用 --moonbridge-bin 指定预编译二进制"
+        return 1
+    fi
 
     repo_dir="$(moonbridge_repo_dir)"
 
@@ -291,8 +300,13 @@ GO_HELP
     fi
 
     print_info "构建 Moon Bridge（源码: ${repo_dir}）..."
+    mkdir -p "$(dirname "$bin_path")"
     cd "$repo_dir"
-    go build -o "$bin_path" ./cmd/moonbridge
+    if ! go build -o "$bin_path" ./cmd/moonbridge; then
+        cd - >/dev/null
+        print_error "go build 失败，请检查 Go 版本和 moon-bridge 源码"
+        return 1
+    fi
     chmod +x "$bin_path"
     cd - >/dev/null
     print_info "Moon Bridge 构建成功: ${bin_path}"
