@@ -20,7 +20,11 @@ script_dir() {
 }
 
 default_bin_dir() {
-    printf '%s\n' "${HOME}/.local/bin"
+    if [ "$(id -u)" -eq 0 ] && [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
+        printf '%s\n' "/usr/local/bin"
+    else
+        printf '%s\n' "${HOME}/.local/bin"
+    fi
 }
 
 install_bin_dir() {
